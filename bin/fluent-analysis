@@ -1,0 +1,22 @@
+#!/usr/bin/env php
+<?php
+
+/*
+ * SPDX-FileCopyrightText: (c) Respect Project Contributors
+ * SPDX-License-Identifier: ISC
+ */
+
+declare(strict_types=1);
+
+require $GLOBALS['_composer_autoload_path'] ?? __DIR__ . '/../vendor/autoload.php';
+
+use Respect\FluentAnalysis\Commands\GenerateCommand;
+use Symfony\Component\Console\Application;
+
+return (static function () {
+    $application = new Application('Respect/FluentAnalysis', '1.0');
+    $application->addCommand(new GenerateCommand());
+    $application->setDefaultCommand('generate');
+
+    return $application->run();
+})();

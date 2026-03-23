@@ -1,0 +1,29 @@
+parameters:
+	fluent:
+		methods: []
+
+parametersSchema:
+	fluent: structure([
+		methods: arrayOf(arrayOf(string()))
+	])
+
+services:
+	fluentMethodMap:
+		class: Respect\FluentAnalysis\MethodMap
+		arguments:
+			methods: %fluent.methods%
+
+	-
+		class: Respect\FluentAnalysis\FluentMethodsExtension
+		arguments:
+			methodMap: @fluentMethodMap
+		tags:
+			- phpstan.broker.methodsClassReflectionExtension
+
+	-
+		class: Respect\FluentAnalysis\FluentDynamicReturnTypeExtension
+		arguments:
+			methodMap: @fluentMethodMap
+		tags:
+			- phpstan.broker.dynamicMethodReturnTypeExtension
+			- phpstan.broker.dynamicStaticMethodReturnTypeExtension

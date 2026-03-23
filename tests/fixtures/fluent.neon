@@ -1,0 +1,8 @@
+parameters:
+	fluent:
+		methods:
+			Respect\FluentAnalysis\Test\Stubs\TestBuilder:
+				cors: Respect\FluentAnalysis\Test\Stubs\Nodes\Cors
+				rateLimit: Respect\FluentAnalysis\Test\Stubs\Nodes\RateLimit
+				noConstructor: Respect\FluentAnalysis\Test\Stubs\Nodes\NoConstructor
+				deprecated: Respect\FluentAnalysis\Test\Stubs\Nodes\DeprecatedNode

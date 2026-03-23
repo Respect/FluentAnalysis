@@ -1,0 +1,8 @@
+includes:
+	- ../../extension.neon
+	- fluent.neon
+
+parameters:
+	level: max
+	paths:
+		- usage.php
