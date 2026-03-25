@@ -4,15 +4,15 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "d6c493ecfb8ae693ac66c56f13da9804",
+    "content-hash": "8c445e59feabe847968ef6d1237988eb",
     "packages": [
         {
             "name": "phpstan/phpstan",
-            "version": "2.1.42",
+            "version": "2.1.43",
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpstan/phpstan/zipball/1279e1ce86ba768f0780c9d889852b4e02ff40d0",
-                "reference": "1279e1ce86ba768f0780c9d889852b4e02ff40d0",
+                "url": "https://api.github.com/repos/phpstan/phpstan/zipball/d01bebe3edfd4d49b9666ee5b8271ddca561042f",
+                "reference": "d01bebe3edfd4d49b9666ee5b8271ddca561042f",
                 "shasum": ""
             },
             "require": {
@@ -57,7 +57,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-03-17T14:58:32+00:00"
+            "time": "2026-03-24T20:40:50+00:00"
         },
         {
             "name": "psr/container",
@@ -114,16 +114,16 @@
         },
         {
             "name": "respect/fluent",
-            "version": "1.0.0",
+            "version": "2.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/Respect/Fluent.git",
-                "reference": "93b2056ebd36648a24a2cea4f1dd2f696f81e510"
+                "reference": "21e9936c4ae753691e895bd4b68ab3380f482141"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Respect/Fluent/zipball/93b2056ebd36648a24a2cea4f1dd2f696f81e510",
-                "reference": "93b2056ebd36648a24a2cea4f1dd2f696f81e510",
+                "url": "https://api.github.com/repos/Respect/Fluent/zipball/21e9936c4ae753691e895bd4b68ab3380f482141",
+                "reference": "21e9936c4ae753691e895bd4b68ab3380f482141",
                 "shasum": ""
             },
             "require": {
@@ -161,9 +161,9 @@
             ],
             "support": {
                 "issues": "https://github.com/Respect/Fluent/issues",
-                "source": "https://github.com/Respect/Fluent/tree/1.0.0"
+                "source": "https://github.com/Respect/Fluent/tree/2.0.0"
             },
-            "time": "2026-03-23T20:43:17+00:00"
+            "time": "2026-03-25T05:08:46+00:00"
         },
         {
             "name": "symfony/console",

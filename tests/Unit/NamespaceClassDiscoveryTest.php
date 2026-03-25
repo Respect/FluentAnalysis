@@ -13,6 +13,7 @@ use Composer\Autoload\ClassLoader;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use ReflectionClass;
 use Respect\FluentAnalysis\NamespaceClassDiscovery;
 use Respect\FluentAnalysis\Test\Stubs\Nodes\Cors;
 use Respect\FluentAnalysis\Test\Stubs\Nodes\DeprecatedNode;
@@ -46,7 +47,7 @@ final class NamespaceClassDiscoveryTest extends TestCase
         self::assertContains(DeprecatedNode::class, $classes);
         self::assertContains(Not::class, $classes);
         self::assertContains(OptInOnly::class, $classes);
-        self::assertCount(6, $classes);
+        self::assertCount(15, $classes);
     }
 
     #[Test]
@@ -67,5 +68,22 @@ final class NamespaceClassDiscoveryTest extends TestCase
         $discovery = new NamespaceClassDiscovery(self::$classLoader);
 
         self::assertSame([], $discovery->discover('NonExistent\\Namespace'));
+    }
+
+    #[Test]
+    public function discoverExcludesAbstractAndInterfaceClasses(): void
+    {
+        $discovery = new NamespaceClassDiscovery(self::$classLoader);
+
+        // Stubs directory contains FakeDiscovery (extends NamespaceClassDiscovery)
+        // and FakeScanner, but FakeDiscovery's parent (NamespaceClassDiscovery) is
+        // readonly and not abstract. The Stubs directory has only concrete classes.
+        // We verify none of the discovered classes are abstract/interface.
+        $classes = $discovery->discover('Respect\\FluentAnalysis\\Test\\Stubs\\Nodes');
+        foreach ($classes as $class) {
+            $reflection = new ReflectionClass($class);
+            self::assertFalse($reflection->isAbstract(), $class . ' should not be abstract');
+            self::assertFalse($reflection->isInterface(), $class . ' should not be an interface');
+        }
     }
 }

@@ -9,15 +9,15 @@ declare(strict_types=1);
 
 namespace Respect\FluentAnalysis\Test\Stubs\Nodes;
 
-use Respect\Fluent\Attributes\Assurance;
-use Respect\Fluent\Attributes\AssuranceModifier;
 use Respect\Fluent\Attributes\Composable;
+use Respect\Fluent\Attributes\ComposableParameter;
 
-#[Composable(self::class, without: [self::class])]
-#[Assurance(modifier: AssuranceModifier::Exclude)]
-final class Not
+#[Composable(self::class)]
+final class Key
 {
     public function __construct(
+        #[ComposableParameter]
+        public readonly string $key,
         public readonly object $inner,
     ) {
     }

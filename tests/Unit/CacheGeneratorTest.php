@@ -14,10 +14,14 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Respect\FluentAnalysis\CacheGenerator;
 use Respect\FluentAnalysis\MethodMapBuilder;
+use Respect\FluentAnalysis\Test\Stubs\AssertingBuilder;
 use Respect\FluentAnalysis\Test\Stubs\ChildBuilder;
 use Respect\FluentAnalysis\Test\Stubs\FakeDiscovery;
 use Respect\FluentAnalysis\Test\Stubs\Nodes\Cors;
+use Respect\FluentAnalysis\Test\Stubs\Nodes\IntNode;
+use Respect\FluentAnalysis\Test\Stubs\Nodes\NumericNode;
 use Respect\FluentAnalysis\Test\Stubs\Nodes\RateLimit;
+use Respect\FluentAnalysis\Test\Stubs\NonFluentBuilder;
 use Respect\FluentAnalysis\Test\Stubs\TestBuilder;
 
 use function strpos;
@@ -50,7 +54,11 @@ final class CacheGeneratorTest extends TestCase
         $neon = $generator->generate([]);
 
         self::assertSame(
-            'parameters:' . PHP_EOL . "\t" . 'fluent:' . PHP_EOL . "\t\t" . 'methods: []' . PHP_EOL,
+            'parameters:' . PHP_EOL
+                . "\t" . 'fluent:' . PHP_EOL
+                . "\t\t" . 'methods: []' . PHP_EOL
+                . "\t\t" . 'assurances: []' . PHP_EOL
+                . "\t\t" . 'assertions: []' . PHP_EOL,
             $neon,
         );
     }
@@ -63,7 +71,11 @@ final class CacheGeneratorTest extends TestCase
         $neon = $generator->generate(['stdClass']);
 
         self::assertSame(
-            'parameters:' . PHP_EOL . "\t" . 'fluent:' . PHP_EOL . "\t\t" . 'methods: []' . PHP_EOL,
+            'parameters:' . PHP_EOL
+                . "\t" . 'fluent:' . PHP_EOL
+                . "\t\t" . 'methods: []' . PHP_EOL
+                . "\t\t" . 'assurances: []' . PHP_EOL
+                . "\t\t" . 'assertions: []' . PHP_EOL,
             $neon,
         );
     }
@@ -76,7 +88,11 @@ final class CacheGeneratorTest extends TestCase
         $neon = $generator->generate([TestBuilder::class]);
 
         self::assertSame(
-            'parameters:' . PHP_EOL . "\t" . 'fluent:' . PHP_EOL . "\t\t" . 'methods: []' . PHP_EOL,
+            'parameters:' . PHP_EOL
+                . "\t" . 'fluent:' . PHP_EOL
+                . "\t\t" . 'methods: []' . PHP_EOL
+                . "\t\t" . 'assurances: []' . PHP_EOL
+                . "\t\t" . 'assertions: []' . PHP_EOL,
             $neon,
         );
     }
@@ -106,6 +122,53 @@ final class CacheGeneratorTest extends TestCase
 
         self::assertStringContainsString(ChildBuilder::class . ':', $neon);
         self::assertStringContainsString('cors: ' . Cors::class, $neon);
+    }
+
+    #[Test]
+    public function generateIncludesAssuranceSection(): void
+    {
+        $generator = $this->createGenerator([IntNode::class, NumericNode::class]);
+
+        $neon = $generator->generate([AssertingBuilder::class]);
+
+        self::assertStringContainsString('assurances:', $neon);
+        self::assertStringContainsString(AssertingBuilder::class . ':', $neon);
+        self::assertStringContainsString('intNode: { type: int }', $neon);
+        self::assertStringContainsString('numericNode: { type: int|float|numeric-string }', $neon);
+    }
+
+    #[Test]
+    public function generateIncludesAssertionSection(): void
+    {
+        $generator = $this->createGenerator([IntNode::class]);
+
+        $neon = $generator->generate([AssertingBuilder::class]);
+
+        self::assertStringContainsString('assertions:', $neon);
+        self::assertStringContainsString(AssertingBuilder::class . ': [doAssert, isOk]', $neon);
+    }
+
+    #[Test]
+    public function generateIncludesServiceSectionForNonFluentBuilder(): void
+    {
+        $generator = $this->createGenerator([Cors::class]);
+
+        $neon = $generator->generate([NonFluentBuilder::class]);
+
+        self::assertStringContainsString('services:', $neon);
+        self::assertStringContainsString('FluentDynamicReturnTypeExtension', $neon);
+        self::assertStringContainsString('FluentTypeSpecifyingExtension', $neon);
+        self::assertStringContainsString('targetClass: ' . NonFluentBuilder::class, $neon);
+    }
+
+    #[Test]
+    public function generateSkipsServiceSectionForFluentBuilderSubclass(): void
+    {
+        $generator = $this->createGenerator([Cors::class]);
+
+        $neon = $generator->generate([TestBuilder::class]);
+
+        self::assertStringNotContainsString('services:', $neon);
     }
 
     /** @param list<class-string> $discoveredClasses */

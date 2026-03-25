@@ -10,15 +10,14 @@ declare(strict_types=1);
 namespace Respect\FluentAnalysis\Test\Stubs\Nodes;
 
 use Respect\Fluent\Attributes\Assurance;
-use Respect\Fluent\Attributes\AssuranceModifier;
-use Respect\Fluent\Attributes\Composable;
+use Respect\Fluent\Attributes\AssuranceCompose;
 
-#[Composable(self::class, without: [self::class])]
-#[Assurance(modifier: AssuranceModifier::Exclude)]
-final class Not
+#[Assurance(compose: AssuranceCompose::Intersect)]
+final class IntersectNode
 {
     public function __construct(
-        public readonly object $inner,
+        private object $child1,
+        private object $child2,
     ) {
     }
 }

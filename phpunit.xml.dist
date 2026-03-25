@@ -21,9 +21,11 @@
             <directory>src</directory>
         </include>
         <exclude>
-            <!-- Runs inside PHPStan's DI container; not reachable by Xdebug.
+            <!-- Run inside PHPStan's DI container; not reachable by Xdebug.
                  Covered by Integration/TypeInference assertType tests. -->
             <file>src/FluentDynamicReturnTypeExtension.php</file>
+            <file>src/FluentTypeSpecifyingExtension.php</file>
+            <file>src/ExtractsAssurance.php</file>
         </exclude>
     </source>
 </phpunit>

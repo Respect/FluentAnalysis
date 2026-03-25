@@ -9,9 +9,9 @@ declare(strict_types=1);
 
 namespace Respect\FluentAnalysis\Test\Stubs\Nodes;
 
-use Respect\Fluent\Attributes\Composable;
+use Respect\Fluent\Attributes\Assurance;
 
-#[Composable(with: [Not::class])]
-final class OptInOnly
+#[Assurance(type: 'int')]
+final class IntNode
 {
 }

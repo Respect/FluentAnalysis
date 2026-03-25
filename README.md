@@ -1,8 +1,8 @@
 # Respect\FluentAnalysis
 
 PHPStan extension for [Respect/Fluent](https://github.com/Respect/Fluent) builders.
-Provides method resolution, parameter validation, and tuple-typed `getNodes()`
-without generated code.
+Provides method resolution, parameter validation, tuple-typed `getNodes()`, and
+type narrowing through assertion methods — without generated code.
 
 Fluent builders use `__call` to resolve method names to class instances. Since
 those methods don't exist as real declarations, PHPStan reports errors and can't
@@ -115,9 +115,52 @@ For builders using Respect/Fluent's composable prefixes (like Validation's
 `notEmail()`, `nullOrStringType()`), the extension resolves composed methods
 with correct parameter signatures.
 
+### Type narrowing
+
+Builders can narrow the type of a variable through assertion methods. Node
+classes declare their assurance via the `#[Assurance]` attribute, assertion
+methods are marked with `#[AssuranceAssertion]`, and `#[AssuranceParameter]`
+identifies the validated parameter and constructor parameters used for type
+resolution.
+
+Void assertion methods narrow unconditionally:
+
+```php
+$builder->intNode()->doAssert($x);
+// PHPStan now knows $x is int
+```
+
+Bool assertion methods work as type guards:
+
+```php
+if ($builder->intNode()->isOk($x)) {
+    // $x is int here
+}
+// $x is not int here
+```
+
+Chained nodes intersect their assurances:
+
+```php
+$builder->intNode()->numericNode()->doAssert($x);
+// int ∩ (int|float|numeric-string) = int
+```
+
+The extension supports several assurance modes through the `#[Assurance]`
+attribute:
+
+- **`type`** — a fixed type string (e.g. `int`, `float|int|numeric-string`)
+- **`#[AssuranceParameter]`** — the type is taken from a constructor parameter
+  annotated with the attribute (e.g. a class-string parameter)
+- **`from: value`** — narrows to the argument's literal type
+- **`from: member`** — narrows to the iterable value type of the argument
+- **`from: elements`** — narrows to an array of the inner assurance type
+- **`compose: union|intersect`** — combines assurances from multiple builder
+  arguments
+
 ## How it works
 
-The extension registers two PHPStan hooks:
+The extension registers three PHPStan hooks:
 
 1. **`FluentMethodsExtension`** (`MethodsClassReflectionExtension`) — tells
    PHPStan which methods exist on each builder, with parameters extracted from
@@ -127,27 +170,35 @@ The extension registers two PHPStan hooks:
    `DynamicStaticMethodReturnTypeExtension`) — intercepts each method call to
    track accumulated node types as a `GenericObjectType` wrapping a
    `ConstantArrayType` tuple. When `getNodes()` is called, the tuple is
-   returned directly.
+   returned directly. Also accumulates assurance types through the chain.
 
-Both extensions share a `MethodMap` that resolves method names to target
-class FQCNs, with parent-class fallback for builder inheritance.
+3. **`FluentTypeSpecifyingExtension`** (`MethodTypeSpecifyingExtension`) —
+   enables type narrowing in control flow. When a builder's assertion method
+   is called, accumulated assurances are applied to narrow the input variable's
+   type. Supports void assertions (unconditional) and bool guards (conditional).
+
+The extensions share a `MethodMap` for method resolution and an `AssuranceMap`
+for type narrowing configuration, both with parent-class fallback for builder
+inheritance.
 
 The `generate` command reads the `#[FluentNamespace]` attribute from each
 builder, extracts the factory's resolver and namespaces, discovers classes,
 and uses `FluentResolver::unresolve()` to derive method names from class names.
 
-## vs. `@mixin`-style interfaces
+## FluentAnalysis vs FluentGen
 
-|                     | FluentAnalysis                      | `@mixin`                             |
-|---------------------|-------------------------------------|--------------------------------------|
-| Generated files     | None (one small neon cache)         | Interface files per builder + prefix |
-| Return type         | `Builder<array{A, B, C}>`           | `Builder` (via `@mixin`)             |
-| `getNodes()` type   | `array{A, B, C}` (exact tuple)      | `array<int, Node>` (generic)         |
-| Element access      | `$nodes[0]` typed as `A`            | `mixed`                              |
-| Deprecation         | Forwarded automatically             | Must regenerate                      |
-| Composable prefixes | Resolved from cache                 | Full method signatures               |
-| IDE support         | PHPStan-powered (PhpStorm, VS Code) | Direct IDE autocomplete              |
-| Maintenance         | Re-run `generate` on class changes  | Manual/generated                     |
+Another similar project is [FluentGen](https://github.com/Respect/FluentGen).
 
-Both approaches work. Use FluentAnalysis for precise type tracking. Use `@mixin`s
-for broader IDE autocomplete without PHPStan.
+Both are complementary, offering IDE support and type inference as separate packages.
+
+|                     | FluentAnalysis                       | FluentGen                            |
+|---------------------|--------------------------------------|--------------------------------------|
+| Generated files     | None (one small neon cache)          | Interface files per builder + prefix |
+| Return type         | `Builder<array{A, B, C}>`            | `Builder` (via `@mixin`)             |
+| `getNodes()` type   | `array{A, B, C}` (exact tuple)       | `array<int, Node>` (generic)         |
+| Element access      | `$nodes[0]` typed as `A`             | `mixed`                              |
+| Deprecation         | Forwarded automatically              | Must regenerate                      |
+| Composable prefixes | Resolved from cache                  | Full method signatures               |
+| Type narrowing      | Assertion methods narrow input types | Not supported                        |
+| IDE support         | PHPStan-powered (PhpStorm, VS Code)  | Direct IDE autocomplete              |
+| Maintenance         | Re-run `generate` on class changes   | Manual/generated                     |

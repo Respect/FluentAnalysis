@@ -6,7 +6,7 @@
     "require": {
         "php": "^8.5",
         "phpstan/phpstan": "^2.1",
-        "respect/fluent": "^1.0",
+        "respect/fluent": "^2.0",
         "symfony/console": "^6.0|^7.0"
     },
     "require-dev": {

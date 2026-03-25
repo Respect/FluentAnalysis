@@ -18,11 +18,21 @@ use Respect\Fluent\Factories\NamespaceLookup;
 use Respect\Fluent\Resolvers\Suffix;
 use Respect\Fluent\Resolvers\Ucfirst;
 use Respect\FluentAnalysis\MethodMapBuilder;
+use Respect\FluentAnalysis\Test\Stubs\AssertingBuilder;
+use Respect\FluentAnalysis\Test\Stubs\ChildAssertingBuilder;
 use Respect\FluentAnalysis\Test\Stubs\FakeDiscovery;
 use Respect\FluentAnalysis\Test\Stubs\Nodes\Cors;
+use Respect\FluentAnalysis\Test\Stubs\Nodes\ElementsNode;
+use Respect\FluentAnalysis\Test\Stubs\Nodes\InstanceNode;
+use Respect\FluentAnalysis\Test\Stubs\Nodes\IntersectNode;
+use Respect\FluentAnalysis\Test\Stubs\Nodes\IntNode;
+use Respect\FluentAnalysis\Test\Stubs\Nodes\Key;
+use Respect\FluentAnalysis\Test\Stubs\Nodes\MemberNode;
 use Respect\FluentAnalysis\Test\Stubs\Nodes\Not;
 use Respect\FluentAnalysis\Test\Stubs\Nodes\OptInOnly;
 use Respect\FluentAnalysis\Test\Stubs\Nodes\RateLimit;
+use Respect\FluentAnalysis\Test\Stubs\Nodes\UnionNode;
+use Respect\FluentAnalysis\Test\Stubs\Nodes\ValueNode;
 
 #[CoversClass(MethodMapBuilder::class)]
 final class MethodMapBuilderTest extends TestCase
@@ -156,6 +166,130 @@ final class MethodMapBuilderTest extends TestCase
         self::assertArrayHasKey('notOptInOnly', $map);
     }
 
+    #[Test]
+    public function buildAssurancesExtractsTypeAttribute(): void
+    {
+        $assurances = $this->buildAssurancesWith(
+            [IntNode::class],
+            new FluentNamespace(new NamespaceLookup(new Ucfirst(), null, self::NAMESPACE)),
+        );
+
+        self::assertSame(['type' => 'int'], $assurances['intNode']);
+    }
+
+    #[Test]
+    public function buildAssurancesExtractsParameterAttribute(): void
+    {
+        $assurances = $this->buildAssurancesWith(
+            [InstanceNode::class],
+            new FluentNamespace(new NamespaceLookup(new Ucfirst(), null, self::NAMESPACE)),
+        );
+
+        self::assertSame(['parameterIndex' => 0], $assurances['instanceNode']);
+    }
+
+    #[Test]
+    public function buildAssurancesExtractsFromAttribute(): void
+    {
+        $assurances = $this->buildAssurancesWith(
+            [ValueNode::class, MemberNode::class, ElementsNode::class],
+            new FluentNamespace(new NamespaceLookup(new Ucfirst(), null, self::NAMESPACE)),
+        );
+
+        self::assertSame('value', $assurances['valueNode']['from']);
+        self::assertSame('member', $assurances['memberNode']['from']);
+        self::assertSame('elements', $assurances['elementsNode']['from']);
+    }
+
+    #[Test]
+    public function buildAssurancesExtractsComposeAttribute(): void
+    {
+        $assurances = $this->buildAssurancesWith(
+            [UnionNode::class, IntersectNode::class],
+            new FluentNamespace(new NamespaceLookup(new Ucfirst(), null, self::NAMESPACE)),
+        );
+
+        self::assertSame('union', $assurances['unionNode']['compose']);
+        self::assertSame('intersect', $assurances['intersectNode']['compose']);
+    }
+
+    #[Test]
+    public function buildAssurancesReturnsEmptyForNoAssurances(): void
+    {
+        $assurances = $this->buildAssurancesWith(
+            [Cors::class],
+            new FluentNamespace(new NamespaceLookup(new Ucfirst(), null, self::NAMESPACE)),
+        );
+
+        self::assertSame([], $assurances);
+    }
+
+    #[Test]
+    public function buildAssurancesGeneratesComposedAssurances(): void
+    {
+        $assurances = $this->buildAssurancesWith(
+            [IntNode::class, Not::class],
+            new FluentNamespace(new ComposingLookup(new NamespaceLookup(new Ucfirst(), null, self::NAMESPACE))),
+        );
+
+        self::assertArrayHasKey('intNode', $assurances);
+        self::assertArrayHasKey('notIntNode', $assurances);
+    }
+
+    #[Test]
+    public function buildAssertionsExtractsAssuranceAssertionAttribute(): void
+    {
+        $builder = new MethodMapBuilder(new FakeDiscovery([]));
+
+        $assertions = $builder->buildAssertions(AssertingBuilder::class);
+
+        self::assertSame(['doAssert', 'isOk'], $assertions);
+    }
+
+    #[Test]
+    public function buildAssertionsIncludesInheritedMethods(): void
+    {
+        $builder = new MethodMapBuilder(new FakeDiscovery([]));
+
+        $assertions = $builder->buildAssertions(ChildAssertingBuilder::class);
+
+        self::assertSame(['doAssert', 'isOk'], $assertions);
+    }
+
+    #[Test]
+    public function buildProducesPrefixParameterFormat(): void
+    {
+        $map = $this->buildWith(
+            [Cors::class, Key::class],
+            new FluentNamespace(new ComposingLookup(new NamespaceLookup(new Ucfirst(), null, self::NAMESPACE))),
+        );
+
+        self::assertSame(Cors::class . ':' . Key::class, $map['keyCors']);
+    }
+
+    #[Test]
+    public function buildAssurancesIncludesWrapperModifier(): void
+    {
+        $assurances = $this->buildAssurancesWith(
+            [IntNode::class, Not::class],
+            new FluentNamespace(new ComposingLookup(new NamespaceLookup(new Ucfirst(), null, self::NAMESPACE))),
+        );
+
+        // Not has #[Assurance(modifier: Exclude)], so composed 'notIntNode' inherits modifier
+        self::assertArrayHasKey('notIntNode', $assurances);
+        self::assertSame('exclude', $assurances['notIntNode']['wrapperModifier']);
+    }
+
+    #[Test]
+    public function buildAssertionsReturnsEmptyForNoAttribute(): void
+    {
+        $builder = new MethodMapBuilder(new FakeDiscovery([]));
+
+        $assertions = $builder->buildAssertions(Cors::class);
+
+        self::assertSame([], $assertions);
+    }
+
     /**
      * @param list<class-string> $classes
      *
@@ -166,5 +300,17 @@ final class MethodMapBuilderTest extends TestCase
         $builder = new MethodMapBuilder(new FakeDiscovery([self::NAMESPACE => $classes]));
 
         return $builder->build($attribute);
+    }
+
+    /**
+     * @param list<class-string> $classes
+     *
+     * @return array<string, array<string, string>>
+     */
+    private function buildAssurancesWith(array $classes, FluentNamespace $attribute): array
+    {
+        $builder = new MethodMapBuilder(new FakeDiscovery([self::NAMESPACE => $classes]));
+
+        return $builder->buildAssurances($attribute);
     }
 }
