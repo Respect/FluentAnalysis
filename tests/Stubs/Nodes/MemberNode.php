@@ -10,15 +10,13 @@ declare(strict_types=1);
 namespace Respect\FluentAnalysis\Test\Stubs\Nodes;
 
 use Respect\Fluent\Attributes\Assurance;
-use Respect\Fluent\Attributes\AssuranceModifier;
-use Respect\Fluent\Attributes\Composable;
+use Respect\Fluent\Attributes\AssuranceFrom;
 
-#[Composable(self::class, without: [self::class])]
-#[Assurance(modifier: AssuranceModifier::Exclude)]
-final class Not
+#[Assurance(from: AssuranceFrom::Member)]
+final class MemberNode
 {
     public function __construct(
-        public readonly object $inner,
+        private mixed $haystack,
     ) {
     }
 }

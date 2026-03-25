@@ -18,6 +18,8 @@ use Respect\Fluent\Builders\Append;
 use Respect\FluentAnalysis\FluentMethodReflection;
 use Respect\FluentAnalysis\FluentMethodsExtension;
 use Respect\FluentAnalysis\MethodMap;
+use Respect\FluentAnalysis\Test\Stubs\Nodes\Cors;
+use Respect\FluentAnalysis\Test\Stubs\Nodes\Key;
 use Respect\FluentAnalysis\Test\Stubs\TestBuilder;
 
 #[CoversClass(FluentMethodsExtension::class)]
@@ -125,6 +127,25 @@ final class FluentMethodsExtensionTest extends PHPStanTestCase
         $classReflection = $this->getReflectionProvider()->getClass('stdClass');
 
         self::assertFalse($extension->hasMethod($classReflection, 'cors'));
+    }
+
+    #[Test]
+    public function getMethodResolvesPrefixParameter(): void
+    {
+        $extension = new FluentMethodsExtension(
+            $this->getReflectionProvider(),
+            new MethodMap([
+                TestBuilder::class => ['keyCors' => Cors::class . ':' . Key::class],
+            ]),
+        );
+        $classReflection = $this->getReflectionProvider()->getClass(TestBuilder::class);
+
+        $method = $extension->getMethod($classReflection, 'keyCors');
+        $params = $method->getVariants()[0]->getParameters();
+
+        // First param is from the prefix class (Key), second from target (Cors)
+        self::assertSame('key', $params[0]->getName());
+        self::assertSame('origin', $params[1]->getName());
     }
 
     private function createExtension(): FluentMethodsExtension

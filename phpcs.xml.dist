@@ -17,6 +17,10 @@
     <!-- PHPStan fixtures require global functions and assertType strings use long FQCNs -->
     <rule ref="Squiz.Functions.GlobalFunction.Found">
         <exclude-pattern>tests/fixtures/</exclude-pattern>
+        <exclude-pattern>tests/assertions/</exclude-pattern>
+    </rule>
+    <rule ref="Squiz.Commenting.FunctionComment.WrongStyle">
+        <exclude-pattern>tests/assertions/</exclude-pattern>
     </rule>
     <rule ref="Generic.Files.LineLength.TooLong">
         <exclude-pattern>tests/assertions/</exclude-pattern>

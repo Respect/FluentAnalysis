@@ -1,10 +1,14 @@
 parameters:
 	fluent:
 		methods: []
+		assurances: []
+		assertions: []
 
 parametersSchema:
 	fluent: structure([
-		methods: arrayOf(arrayOf(string()))
+		methods: arrayOf(arrayOf(string())),
+		assurances: arrayOf(arrayOf(arrayOf(anyOf(string(), int(), listOf(anyOf(int(), type('null'))))))),
+		assertions: arrayOf(listOf(string()))
 	])
 
 services:
@@ -12,6 +16,12 @@ services:
 		class: Respect\FluentAnalysis\MethodMap
 		arguments:
 			methods: %fluent.methods%
+
+	fluentAssuranceMap:
+		class: Respect\FluentAnalysis\AssuranceMap
+		arguments:
+			assurances: %fluent.assurances%
+			assertions: %fluent.assertions%
 
 	-
 		class: Respect\FluentAnalysis\FluentMethodsExtension
@@ -24,6 +34,16 @@ services:
 		class: Respect\FluentAnalysis\FluentDynamicReturnTypeExtension
 		arguments:
 			methodMap: @fluentMethodMap
+			assuranceMap: @fluentAssuranceMap
+			targetClass: Respect\Fluent\Builders\FluentBuilder
 		tags:
 			- phpstan.broker.dynamicMethodReturnTypeExtension
 			- phpstan.broker.dynamicStaticMethodReturnTypeExtension
+
+	-
+		class: Respect\FluentAnalysis\FluentTypeSpecifyingExtension
+		arguments:
+			assuranceMap: @fluentAssuranceMap
+			targetClass: Respect\Fluent\Builders\FluentBuilder
+		tags:
+			- phpstan.typeSpecifier.methodTypeSpecifyingExtension

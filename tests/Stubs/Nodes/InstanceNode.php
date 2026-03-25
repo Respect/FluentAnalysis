@@ -10,15 +10,15 @@ declare(strict_types=1);
 namespace Respect\FluentAnalysis\Test\Stubs\Nodes;
 
 use Respect\Fluent\Attributes\Assurance;
-use Respect\Fluent\Attributes\AssuranceModifier;
-use Respect\Fluent\Attributes\Composable;
+use Respect\Fluent\Attributes\AssuranceParameter;
 
-#[Composable(self::class, without: [self::class])]
-#[Assurance(modifier: AssuranceModifier::Exclude)]
-final class Not
+#[Assurance()]
+final class InstanceNode
 {
+    /** @param class-string $class */
     public function __construct(
-        public readonly object $inner,
+        #[AssuranceParameter]
+        private string $class,
     ) {
     }
 }
