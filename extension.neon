@@ -1,27 +1,42 @@
 parameters:
 	fluent:
-		methods: []
-		assurances: []
-		assertions: []
+		builders: []
 
 parametersSchema:
 	fluent: structure([
-		methods: arrayOf(arrayOf(string())),
-		assurances: arrayOf(arrayOf(arrayOf(anyOf(string(), int(), listOf(anyOf(int(), type('null'))))))),
-		assertions: arrayOf(listOf(string()))
+		builders: listOf(anyOf(
+			structure([
+				builder: string(),
+				namespace: string()
+			]),
+			structure([
+				builder: string()
+			])
+		))
 	])
 
 services:
+	fluentNamespaceDiscovery:
+		class: Respect\FluentAnalysis\NamespaceClassDiscovery
+
+	fluentMapBuilder:
+		class: Respect\FluentAnalysis\MethodMapBuilder
+		arguments:
+			discovery: @fluentNamespaceDiscovery
+
+	fluentMapFactory:
+		class: Respect\FluentAnalysis\MethodMapFactory
+		arguments:
+			builders: %fluent.builders%
+			mapBuilder: @fluentMapBuilder
+
 	fluentMethodMap:
 		class: Respect\FluentAnalysis\MethodMap
-		arguments:
-			methods: %fluent.methods%
+		factory: @fluentMapFactory::createMethodMap
 
 	fluentAssuranceMap:
 		class: Respect\FluentAnalysis\AssuranceMap
-		arguments:
-			assurances: %fluent.assurances%
-			assertions: %fluent.assertions%
+		factory: @fluentMapFactory::createAssuranceMap
 
 	-
 		class: Respect\FluentAnalysis\FluentMethodsExtension

@@ -11,9 +11,7 @@ declare(strict_types=1);
 namespace Respect\FluentAnalysis\Commands;
 
 use Respect\FluentAnalysis\BuilderClassScanner;
-use Respect\FluentAnalysis\CacheGenerator;
-use Respect\FluentAnalysis\MethodMapBuilder;
-use Respect\FluentAnalysis\NamespaceClassDiscovery;
+use Respect\FluentAnalysis\ConfigGenerator;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -30,15 +28,13 @@ use function sprintf;
 
 #[AsCommand(
     name: 'generate',
-    description: 'Generate fluent.neon cache for PHPStan',
+    description: 'Generate fluent.neon config for PHPStan',
 )]
 final class GenerateCommand extends Command
 {
     public function __construct(
         private readonly BuilderClassScanner $scanner = new BuilderClassScanner(),
-        private readonly CacheGenerator $generator = new CacheGenerator(
-            new MethodMapBuilder(new NamespaceClassDiscovery()),
-        ),
+        private readonly ConfigGenerator $generator = new ConfigGenerator(),
     ) {
         parent::__construct();
     }

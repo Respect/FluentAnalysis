@@ -1,31 +1,5 @@
 parameters:
 	fluent:
-		methods:
-			Respect\FluentAnalysis\Test\Stubs\TestBuilder:
-				cors: Respect\FluentAnalysis\Test\Stubs\Nodes\Cors
-				rateLimit: Respect\FluentAnalysis\Test\Stubs\Nodes\RateLimit
-				noConstructor: Respect\FluentAnalysis\Test\Stubs\Nodes\NoConstructor
-				deprecated: Respect\FluentAnalysis\Test\Stubs\Nodes\DeprecatedNode
-			Respect\FluentAnalysis\Test\Stubs\AssertingBuilder:
-				cors: Respect\FluentAnalysis\Test\Stubs\Nodes\Cors
-				intNode: Respect\FluentAnalysis\Test\Stubs\Nodes\IntNode
-				instanceNode: Respect\FluentAnalysis\Test\Stubs\Nodes\InstanceNode
-				numericNode: Respect\FluentAnalysis\Test\Stubs\Nodes\NumericNode
-				noConstructor: Respect\FluentAnalysis\Test\Stubs\Nodes\NoConstructor
-				valueNode: Respect\FluentAnalysis\Test\Stubs\Nodes\ValueNode
-				memberNode: Respect\FluentAnalysis\Test\Stubs\Nodes\MemberNode
-				unionNode: Respect\FluentAnalysis\Test\Stubs\Nodes\UnionNode
-				intersectNode: Respect\FluentAnalysis\Test\Stubs\Nodes\IntersectNode
-				elementsNode: Respect\FluentAnalysis\Test\Stubs\Nodes\ElementsNode
-		assurances:
-			Respect\FluentAnalysis\Test\Stubs\AssertingBuilder:
-				intNode: { type: int }
-				instanceNode: { parameterIndex: 0 }
-				numericNode: { type: int|float|numeric-string }
-				valueNode: { from: value }
-				memberNode: { from: member }
-				unionNode: { compose: union }
-				intersectNode: { compose: intersect }
-				elementsNode: { from: elements }
-		assertions:
-			Respect\FluentAnalysis\Test\Stubs\AssertingBuilder: [doAssert, isOk]
+		builders:
+			- builder: Respect\FluentAnalysis\Test\Stubs\TestBuilder
+			- builder: Respect\FluentAnalysis\Test\Stubs\AssertingBuilder
