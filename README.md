@@ -2,7 +2,7 @@
 
 PHPStan extension for [Respect/Fluent](https://github.com/Respect/Fluent) builders.
 Provides method resolution, parameter validation, tuple-typed `getNodes()`, and
-type narrowing through assertion methods — without generated code.
+type narrowing through assertion methods.
 
 Fluent builders use `__call` to resolve method names to class instances. Since
 those methods don't exist as real declarations, PHPStan reports errors and can't
@@ -33,37 +33,44 @@ Requires PHP 8.5+ and PHPStan 2.1+.
 
 ## Setup
 
-### 1. Generate the method cache
+Libraries that ship a Fluent builder declare it in their `fluent.neon`:
+
+```neon
+parameters:
+    fluent:
+        builders:
+            - builder: App\MiddlewareStack
+```
+
+The extension loads automatically via
+[phpstan/extension-installer](https://github.com/phpstan/extension-installer).
+Method maps are built from `#[FluentNamespace]` attributes at PHPStan boot.
+
+### Adding custom namespaces
+
+To add extra node namespaces to an existing builder (e.g. custom validators):
+
+```neon
+parameters:
+    fluent:
+        builders:
+            - builder: Respect\Validation\ValidatorBuilder
+              namespace: App\Validators
+```
+
+Entries from multiple neon files are merged automatically. Each package,
+extension, or user project can append entries independently.
+
+### Generating config for new projects
+
+For projects that define their own `#[FluentNamespace]` builders:
 
 ```bash
 vendor/bin/fluent-analysis generate
 ```
 
-This scans your project for builder classes with `#[FluentNamespace]`, reads the
-factory configuration from the attribute, and writes a `fluent.neon` file mapping
-method names to target classes.
-
-### 2. Include in your PHPStan config
-
-```neon
-includes:
-    - vendor/respect/fluent-analysis/extension.neon
-    - fluent.neon
-```
-
-The extension loads automatically via Composer's PHPStan plugin mechanism.
-The `fluent.neon` file provides the method map for your specific builders.
-
-### 3. Re-generate when classes change
-
-Run `vendor/bin/fluent-analysis generate` again after adding, removing, or
-renaming classes in your fluent namespaces. The command detects unchanged output
-and skips the write if nothing changed.
-
-```bash
-# Custom output path
-vendor/bin/fluent-analysis generate -o phpstan/fluent.neon
-```
+This scans your `composer.json` autoload entries for builder classes and writes
+a `fluent.neon` with the builder list and service registrations.
 
 ## Features
 
@@ -181,9 +188,10 @@ The extensions share a `MethodMap` for method resolution and an `AssuranceMap`
 for type narrowing configuration, both with parent-class fallback for builder
 inheritance.
 
-The `generate` command reads the `#[FluentNamespace]` attribute from each
-builder, extracts the factory's resolver and namespaces, discovers classes,
-and uses `FluentResolver::unresolve()` to derive method names from class names.
+At PHPStan boot, `MethodMapFactory` reads the `builders` parameter, reflects
+each builder's `#[FluentNamespace]` attribute, discovers classes in the
+declared namespaces, and builds the method/assurance maps. Extra namespaces
+from user config are merged via `withNamespace()`.
 
 ## FluentAnalysis vs FluentGen
 
@@ -193,12 +201,11 @@ Both are complementary, offering IDE support and type inference as separate pack
 
 |                     | FluentAnalysis                       | FluentGen                            |
 |---------------------|--------------------------------------|--------------------------------------|
-| Generated files     | None (one small neon cache)          | Interface files per builder + prefix |
+| Generated files     | None                                 | Interface files per builder + prefix |
 | Return type         | `Builder<array{A, B, C}>`            | `Builder` (via `@mixin`)             |
 | `getNodes()` type   | `array{A, B, C}` (exact tuple)       | `array<int, Node>` (generic)         |
 | Element access      | `$nodes[0]` typed as `A`             | `mixed`                              |
 | Deprecation         | Forwarded automatically              | Must regenerate                      |
-| Composable prefixes | Resolved from cache                  | Full method signatures               |
+| Composable prefixes | Resolved from attribute              | Full method signatures               |
 | Type narrowing      | Assertion methods narrow input types | Not supported                        |
 | IDE support         | PHPStan-powered (PhpStorm, VS Code)  | Direct IDE autocomplete              |
-| Maintenance         | Re-run `generate` on class changes   | Manual/generated                     |

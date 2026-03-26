@@ -12,11 +12,8 @@ namespace Respect\FluentAnalysis\Test\Unit;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Respect\FluentAnalysis\CacheGenerator;
 use Respect\FluentAnalysis\Commands\GenerateCommand;
-use Respect\FluentAnalysis\MethodMapBuilder;
-use Respect\FluentAnalysis\Test\Stubs\FakeDiscovery;
-use Respect\FluentAnalysis\Test\Stubs\Nodes\Cors;
+use Respect\FluentAnalysis\ConfigGenerator;
 use Respect\FluentAnalysis\Test\Stubs\TestBuilder;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
@@ -35,7 +32,7 @@ final class GenerateCommandTest extends TestCase
         $outputFile = tempnam(sys_get_temp_dir(), 'fluent-test-') . '.neon';
 
         try {
-            $tester = $this->runCommand([TestBuilder::class], [Cors::class], $outputFile);
+            $tester = $this->runCommand([TestBuilder::class], $outputFile);
 
             self::assertSame(Command::SUCCESS, $tester->getStatusCode());
             self::assertStringContainsString('Generated', $tester->getDisplay());
@@ -53,7 +50,7 @@ final class GenerateCommandTest extends TestCase
         $outputFile = tempnam(sys_get_temp_dir(), 'fluent-test-') . '.neon';
 
         try {
-            $tester = $this->runCommand([], [], $outputFile);
+            $tester = $this->runCommand([], $outputFile);
 
             self::assertSame(Command::SUCCESS, $tester->getStatusCode());
             self::assertStringContainsString('No classes', $tester->getDisplay());
@@ -70,11 +67,9 @@ final class GenerateCommandTest extends TestCase
         $outputFile = tempnam(sys_get_temp_dir(), 'fluent-test-') . '.neon';
 
         try {
-            // First run: generate
-            $this->runCommand([TestBuilder::class], [Cors::class], $outputFile);
+            $this->runCommand([TestBuilder::class], $outputFile);
 
-            // Second run: same content
-            $tester = $this->runCommand([TestBuilder::class], [Cors::class], $outputFile);
+            $tester = $this->runCommand([TestBuilder::class], $outputFile);
 
             self::assertSame(Command::SUCCESS, $tester->getStatusCode());
             self::assertStringContainsString('No changes', $tester->getDisplay());
@@ -85,15 +80,11 @@ final class GenerateCommandTest extends TestCase
         }
     }
 
-    /**
-     * @param list<class-string> $scannedClasses
-     * @param list<class-string> $discoveredNodes
-     */
-    private function runCommand(array $scannedClasses, array $discoveredNodes, string $outputFile): CommandTester
+    /** @param list<class-string> $scannedClasses */
+    private function runCommand(array $scannedClasses, string $outputFile): CommandTester
     {
         $scanner = new FakeScanner($scannedClasses);
-        $discovery = new FakeDiscovery(['Respect\\FluentAnalysis\\Test\\Stubs\\Nodes' => $discoveredNodes]);
-        $generator = new CacheGenerator(new MethodMapBuilder($discovery));
+        $generator = new ConfigGenerator();
 
         $command = new GenerateCommand($scanner, $generator);
         $tester = new CommandTester($command);

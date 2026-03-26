@@ -79,27 +79,23 @@ readonly class NamespaceClassDiscovery
 
     private function findDirectory(string $namespace): string|null
     {
-        $loader = $this->getClassLoader();
+        foreach ($this->getClassLoaders() as $loader) {
+            $prefixes = $loader->getPrefixesPsr4();
 
-        if ($loader === null) {
-            return null;
-        }
+            foreach ($prefixes as $prefix => $dirs) {
+                if (!str_starts_with($namespace, $prefix)) {
+                    continue;
+                }
 
-        $prefixes = $loader->getPrefixesPsr4();
+                $relative = substr($namespace, strlen($prefix));
+                $relative = str_replace('\\', '/', $relative);
 
-        foreach ($prefixes as $prefix => $dirs) {
-            if (!str_starts_with($namespace, $prefix)) {
-                continue;
-            }
+                foreach ($dirs as $dir) {
+                    $candidate = rtrim($dir, '/') . '/' . rtrim($relative, '/');
 
-            $relative = substr($namespace, strlen($prefix));
-            $relative = str_replace('\\', '/', $relative);
-
-            foreach ($dirs as $dir) {
-                $candidate = rtrim($dir, '/') . '/' . rtrim($relative, '/');
-
-                if (is_dir($candidate)) {
-                    return $candidate;
+                    if (is_dir($candidate)) {
+                        return $candidate;
+                    }
                 }
             }
         }
@@ -107,18 +103,21 @@ readonly class NamespaceClassDiscovery
         return null;
     }
 
-    private function getClassLoader(): ClassLoader|null
+    /** @return iterable<ClassLoader> */
+    private function getClassLoaders(): iterable
     {
         if ($this->classLoader !== null) {
-            return $this->classLoader;
+            yield $this->classLoader;
+
+            return;
         }
 
-        foreach (spl_autoload_functions() as $function) {
-            if (is_array($function) && $function[0] instanceof ClassLoader) {
-                return $function[0];
+        foreach (spl_autoload_functions() ?: [] as $function) {
+            if (!is_array($function) || !$function[0] instanceof ClassLoader) {
+                continue;
             }
-        }
 
-        return null;
+            yield $function[0];
+        }
     }
 }
