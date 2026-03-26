@@ -24,7 +24,9 @@ use Respect\Fluent\FluentNode;
 use Respect\Fluent\FluentResolver;
 
 use function assert;
+use function implode;
 use function in_array;
+use function is_array;
 use function ucfirst;
 
 /**
@@ -284,7 +286,7 @@ final readonly class MethodMapBuilder
             }
 
             if ($assurance->type !== null) {
-                $entry['type'] = $assurance->type;
+                $entry['type'] = is_array($assurance->type) ? implode('|', $assurance->type) : $assurance->type;
             }
 
             if ($parameterIndex !== null) {
